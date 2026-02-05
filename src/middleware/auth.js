@@ -1,18 +1,24 @@
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
+const ApiError = require("../utils/ApiError");
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    return res.status(401).json({ error: 'No token provided' });
+    throw new ApiError(401, "No token provided");
+  }
+
+  if (!process.env.JWT_SECRET) {
+    throw new ApiError(500, "JWT secret not configured");
   }
 
   try {
-    const token = authHeader.split(' ')[1];
+    const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
     req.user = decoded;
     next();
-  } catch {
-    res.status(401).json({ error: 'Invalid token' });
+  } catch (error) {
+    throw new ApiError(401, "Invalid token");
   }
 };

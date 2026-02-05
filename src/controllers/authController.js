@@ -1,5 +1,6 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const ApiError = require("../utils/ApiError");
 
 // Temporary in-memory users
 const users = [];
@@ -8,15 +9,9 @@ const users = [];
 exports.register = async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({
-      error: 'Email and password are required'
-    });
-  }
-
   const userExists = users.find(u => u.email === email);
   if (userExists) {
-    return res.status(400).json({ error: 'User already exists' });
+    throw new ApiError(400, "User already exists");
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -27,7 +22,10 @@ exports.register = async (req, res) => {
     password: hashedPassword
   });
 
-  res.status(201).json({ message: 'User registered successfully' });
+  res.status(201).json({
+    success: true,
+    message: "User registered successfully"
+  });
 };
 
 // LOGIN
@@ -36,19 +34,26 @@ exports.login = async (req, res) => {
 
   const user = users.find(u => u.email === email);
   if (!user) {
-    return res.status(401).json({ error: 'Invalid credentials' });
+    throw new ApiError(401, "Invalid credentials");
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    return res.status(401).json({ error: 'Invalid credentials' });
+    throw new ApiError(401, "Invalid credentials");
+  }
+
+  if (!process.env.JWT_SECRET) {
+    throw new ApiError(500, "JWT secret not configured");
   }
 
   const token = jwt.sign(
     { id: user.id, email: user.email },
     process.env.JWT_SECRET,
-    { expiresIn: '1h' }
+    { expiresIn: "1h" }
   );
 
-  res.json({ token });
+  res.json({
+    success: true,
+    token
+  });
 };
