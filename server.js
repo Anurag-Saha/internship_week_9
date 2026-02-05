@@ -2,16 +2,14 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-const app = express();
 const postRoutes = require('./src/routes/postRoutes');
+const authRoutes = require('./src/routes/authRoutes');
 
+const app = express();
 
 // Global middleware
 app.use(cors());
 app.use(express.json());
-
-// Routes
-app.use('/api/posts', postRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
@@ -21,6 +19,10 @@ app.get('/api/health', (req, res) => {
     time: new Date().toISOString()
   });
 });
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/posts', postRoutes);
 
 // Server start
 const PORT = process.env.PORT || 3000;

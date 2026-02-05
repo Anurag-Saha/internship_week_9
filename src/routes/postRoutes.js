@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const auth = require('../middleware/auth');
 
 /**
  * Temporary in-memory data
@@ -7,12 +8,12 @@ const router = express.Router();
  */
 let posts = [];
 
-// GET all posts
+// GET all posts (public)
 router.get('/', (req, res) => {
   res.json(posts);
 });
 
-// GET post by ID
+// GET post by ID (public)
 router.get('/:id', (req, res) => {
   const post = posts.find(p => p.id === Number(req.params.id));
 
@@ -23,20 +24,21 @@ router.get('/:id', (req, res) => {
   res.json(post);
 });
 
-// CREATE post
-router.post('/', (req, res) => {
+// CREATE post (protected)
+router.post('/', auth, (req, res) => {
   const { title, content } = req.body;
 
   if (!title || !content) {
-    return res
-      .status(400)
-      .json({ error: 'Title and content are required' });
+    return res.status(400).json({
+      error: 'Title and content are required'
+    });
   }
 
   const newPost = {
     id: Date.now(),
     title,
     content,
+    author: req.user.id, // comes from JWT
     createdAt: new Date().toISOString()
   };
 
@@ -45,8 +47,8 @@ router.post('/', (req, res) => {
   res.status(201).json(newPost);
 });
 
-// UPDATE post
-router.put('/:id', (req, res) => {
+// UPDATE post (protected)
+router.put('/:id', auth, (req, res) => {
   const post = posts.find(p => p.id === Number(req.params.id));
 
   if (!post) {
@@ -59,8 +61,8 @@ router.put('/:id', (req, res) => {
   res.json(post);
 });
 
-// DELETE post
-router.delete('/:id', (req, res) => {
+// DELETE post (protected)
+router.delete('/:id', auth, (req, res) => {
   posts = posts.filter(p => p.id !== Number(req.params.id));
   res.json({ message: 'Post deleted successfully' });
 });
