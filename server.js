@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const postRoutes = require('./src/routes/postRoutes');
 const authRoutes = require('./src/routes/authRoutes');
+const errorHandler = require('./src/middleware/errorHandler');
 
 const app = express();
 
@@ -11,7 +12,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Health check route
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -24,7 +25,9 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 
-// Server start
+// Global error handler
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

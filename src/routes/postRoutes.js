@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
+
 const auth = require('../middleware/auth');
+const {
+  validateCreatePost,
+  validateUpdatePost
+} = require('../middleware/validatePost');
 
 /**
  * Temporary in-memory data
@@ -25,20 +30,14 @@ router.get('/:id', (req, res) => {
 });
 
 // CREATE post (protected)
-router.post('/', auth, (req, res) => {
+router.post('/', auth, validateCreatePost, (req, res) => {
   const { title, content } = req.body;
-
-  if (!title || !content) {
-    return res.status(400).json({
-      error: 'Title and content are required'
-    });
-  }
 
   const newPost = {
     id: Date.now(),
     title,
     content,
-    author: req.user.id, // comes from JWT
+    author: req.user.id,
     createdAt: new Date().toISOString()
   };
 
@@ -48,7 +47,7 @@ router.post('/', auth, (req, res) => {
 });
 
 // UPDATE post (protected)
-router.put('/:id', auth, (req, res) => {
+router.put('/:id', auth, validateUpdatePost, (req, res) => {
   const post = posts.find(p => p.id === Number(req.params.id));
 
   if (!post) {
@@ -63,7 +62,14 @@ router.put('/:id', auth, (req, res) => {
 
 // DELETE post (protected)
 router.delete('/:id', auth, (req, res) => {
+  const postExists = posts.find(p => p.id === Number(req.params.id));
+
+  if (!postExists) {
+    return res.status(404).json({ error: 'Post not found' });
+  }
+
   posts = posts.filter(p => p.id !== Number(req.params.id));
+
   res.json({ message: 'Post deleted successfully' });
 });
 
